@@ -9,3 +9,23 @@ export interface AuthResponse {
   token: string;
   user: User;
 }
+
+export interface Project {
+  id: string;
+  name: string;
+  description: string | null;
+  ownerId: string;
+  createdAt: string;
+  _count?: { tasks: number };
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  status: 'TODO' | 'IN_PROGRESS' | 'DONE';
+  projectId: string;
+  assignedToId: string | null;
+  createdAt: string;
+  assignedTo?: { id: string; name: string; email: string };
+}
