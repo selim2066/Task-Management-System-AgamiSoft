@@ -7,7 +7,7 @@ import DashboardLayout from '../../../../components/DashboardLayout';
 import api from '../../../../lib/api';
 import { Project, Task } from '../../../../types';
 import { useParams, useRouter } from 'next/navigation';
-import { Plus, Trash2, ArrowLeft, Loader2, ListTodo } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, Loader2, ListTodo, Search, X } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProjectPage() {
@@ -20,6 +20,10 @@ export default function ProjectPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // Filter state
+  const [search, setSearch] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [title, setTitle] = useState('');
@@ -29,18 +33,24 @@ export default function ProjectPage() {
 
   useEffect(() => {
     if (id && user) {
-      fetchProjectAndTasks();
+      fetchProject();
     }
   }, [id, user]);
 
-  const fetchProjectAndTasks = async () => {
+  // Debounced task fetch based on filters
+  useEffect(() => {
+    if (!id || !user) return;
+    const timeoutId = setTimeout(() => {
+      fetchTasks(search, filterStatus);
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [search, filterStatus, id, user]);
+
+  const fetchProject = async () => {
     try {
       setLoading(true);
       const projRes = await api.get<Project>(`/projects/${id}`);
       setProject(projRes.data);
-      
-      const tasksRes = await api.get<Task[]>(`/tasks?projectId=${id}`);
-      setTasks(tasksRes.data);
     } catch (err: any) {
       console.error('Failed to fetch project details', err);
       if (err.response?.status === 403 || err.response?.status === 404) {
@@ -48,6 +58,18 @@ export default function ProjectPage() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTasks = async (currentSearch: string, currentStatus: string) => {
+    try {
+      let url = `/tasks?projectId=${id}`;
+      if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
+      if (currentStatus) url += `&status=${currentStatus}`;
+      const tasksRes = await api.get<Task[]>(url);
+      setTasks(tasksRes.data);
+    } catch (err) {
+      console.error('Failed to fetch tasks', err);
     }
   };
 
@@ -78,7 +100,7 @@ export default function ProjectPage() {
     setIsSubmitting(true);
     try {
       await api.post('/tasks', { title, description, status, projectId: id });
-      await fetchProjectAndTasks();
+      await fetchTasks(search, filterStatus);
       setIsModalOpen(false);
       setTitle('');
       setDescription('');
@@ -89,6 +111,13 @@ export default function ProjectPage() {
       setIsSubmitting(false);
     }
   };
+
+  const clearFilters = () => {
+    setSearch('');
+    setFilterStatus('');
+  };
+
+  const isFiltering = search !== '' || filterStatus !== '';
 
   const statusColors = {
     TODO: 'bg-gray-100 text-gray-800 border-gray-200',
@@ -117,29 +146,82 @@ export default function ProjectPage() {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="p-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-                <h2 className="text-xl font-bold text-gray-800 flex items-center">
-                  <ListTodo className="h-5 w-5 mr-2 text-blue-600" />
-                  Tasks
-                </h2>
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors shadow-sm w-full sm:w-auto justify-center"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>New Task</span>
-                </button>
+              <div className="p-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col space-y-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+                  <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                    <ListTodo className="h-5 w-5 mr-2 text-blue-600" />
+                    Tasks
+                  </h2>
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors shadow-sm w-full sm:w-auto justify-center"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>New Task</span>
+                  </button>
+                </div>
+
+                {/* Filter Controls */}
+                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 items-center bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <div className="relative w-full sm:w-64">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Search className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search tasks by title..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  </div>
+                  <div className="w-full sm:w-48">
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white"
+                    >
+                      <option value="">All Statuses</option>
+                      <option value="TODO">To Do</option>
+                      <option value="IN_PROGRESS">In Progress</option>
+                      <option value="DONE">Done</option>
+                    </select>
+                  </div>
+                  {isFiltering && (
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Clear filters
+                    </button>
+                  )}
+                </div>
               </div>
 
               {tasks.length === 0 ? (
                 <div className="p-12 text-center">
-                  <p className="text-gray-500 mb-4">No tasks yet for this project.</p>
-                  <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    <Plus className="h-4 w-4 mr-1" /> Create the first task
-                  </button>
+                  {isFiltering ? (
+                    <div>
+                      <p className="text-gray-500 mb-4">No tasks match your search/filter.</p>
+                      <button
+                        onClick={clearFilters}
+                        className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        Clear filters
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-gray-500 mb-4">No tasks yet for this project.</p>
+                      <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Create the first task
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
