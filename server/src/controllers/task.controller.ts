@@ -37,6 +37,15 @@ export const taskController = {
     }
   },
 
+  async getAllAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const tasks = await taskService.getAllTasksAdmin();
+      res.status(200).json(tasks);
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async getById(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;

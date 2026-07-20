@@ -1,5 +1,6 @@
 import { prisma } from '../utils/prisma';
 import { AppError } from '../utils/AppError';
+import { ROLES } from '../constants/roles';
 
 interface UserContext {
   id: string;
@@ -20,7 +21,7 @@ export const projectService = {
   },
 
   async getProjects(user: UserContext) {
-    if (user.role === 'ADMIN') {
+    if (user.role === ROLES.ADMIN) {
       return await prisma.project.findMany({
         include: {
           owner: {
@@ -60,7 +61,7 @@ export const projectService = {
       throw new AppError('Project not found', 404);
     }
 
-    if (user.role !== 'ADMIN' && project.ownerId !== user.id) {
+    if (user.role !== ROLES.ADMIN && project.ownerId !== user.id) {
       throw new AppError('Forbidden: You do not have access to this project', 403);
     }
 
@@ -85,6 +86,19 @@ export const projectService = {
 
     await prisma.project.delete({
       where: { id },
+    });
+  },
+
+  async getAllProjectsAdmin() {
+    return await prisma.project.findMany({
+      include: {
+        owner: {
+          select: { id: true, name: true, email: true },
+        },
+        _count: {
+          select: { tasks: true },
+        },
+      },
     });
   },
 };

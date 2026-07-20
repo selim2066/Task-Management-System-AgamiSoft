@@ -31,6 +31,15 @@ export const projectController = {
     }
   },
 
+  async getAllAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const projects = await projectService.getAllProjectsAdmin();
+      res.status(200).json(projects);
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async getById(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;

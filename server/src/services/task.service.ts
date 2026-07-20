@@ -1,6 +1,7 @@
 import { prisma } from '../utils/prisma';
 import { AppError } from '../utils/AppError';
 import { TaskStatus } from '@prisma/client';
+import { ROLES } from '../constants/roles';
 
 interface UserContext {
   id: string;
@@ -24,7 +25,7 @@ export const taskService = {
       throw new AppError('Project not found', 404);
     }
 
-    if (user.role !== 'ADMIN' && project.ownerId !== user.id) {
+    if (user.role !== ROLES.ADMIN && project.ownerId !== user.id) {
       throw new AppError('Forbidden: You do not have access to create tasks in this project', 403);
     }
 
@@ -50,7 +51,7 @@ export const taskService = {
       where.title = { contains: filters.search, mode: 'insensitive' };
     }
 
-    if (user.role !== 'ADMIN') {
+    if (user.role !== ROLES.ADMIN) {
       where.OR = [
         { project: { ownerId: user.id } },
         { assignedToId: user.id },
@@ -79,7 +80,7 @@ export const taskService = {
       throw new AppError('Task not found', 404);
     }
 
-    if (user.role !== 'ADMIN' && task.project.ownerId !== user.id && task.assignedToId !== user.id) {
+    if (user.role !== ROLES.ADMIN && task.project.ownerId !== user.id && task.assignedToId !== user.id) {
       throw new AppError('Forbidden: You do not have access to this task', 403);
     }
 
@@ -102,6 +103,15 @@ export const taskService = {
 
     await prisma.task.delete({
       where: { id },
+    });
+  },
+
+  async getAllTasksAdmin() {
+    return await prisma.task.findMany({
+      include: {
+        assignedTo: { select: { id: true, name: true, email: true } },
+        project: { select: { id: true, name: true } }
+      }
     });
   },
 };
