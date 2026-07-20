@@ -14,7 +14,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string };
-    req.user = decoded;
+    (req as any).user = decoded;
     next();
   } catch (error) {
     return next(new AppError('Invalid or expired token', 401));
@@ -23,7 +23,8 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 
 export const authorize = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    const user = (req as any).user;
+    if (!user || !roles.includes(user.role)) {
       return next(new AppError('Forbidden: Insufficient permissions', 403));
     }
     next();
