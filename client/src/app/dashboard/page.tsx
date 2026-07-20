@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import DashboardLayout from '../../components/DashboardLayout';
+import { useToast } from '../../context/ToastContext';
+import { getErrorMessage } from '../../lib/errorHandler';
 import api from '../../lib/api';
 import { Project } from '../../types';
 import Link from 'next/link';
@@ -11,6 +13,7 @@ import { FolderPlus, Trash2, Edit2, ChevronRight, Loader2, FolderKanban } from '
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -20,6 +23,7 @@ export default function DashboardPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<{name?: string}>({});
 
   useEffect(() => {
     fetchProjects();
@@ -33,7 +37,7 @@ export default function DashboardPage() {
       const res = await api.get<Project[]>(url);
       setProjects(res.data);
     } catch (err) {
-      console.error('Failed to fetch projects', err);
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setLoading(false);
     }
@@ -49,6 +53,7 @@ export default function DashboardPage() {
       setName('');
       setDescription('');
     }
+    setValidationErrors({});
     setIsModalOpen(true);
   };
 
@@ -57,23 +62,35 @@ export default function DashboardPage() {
     setName('');
     setDescription('');
     setEditingId(null);
+    setValidationErrors({});
+  };
+
+  const validate = () => {
+    const errors: {name?: string} = {};
+    if (!name.trim() || name.trim().length < 2) {
+      errors.name = 'Project name must be at least 2 characters.';
+    }
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!validate()) return;
     
     setIsSubmitting(true);
     try {
       if (editingId) {
         await api.put(`/projects/${editingId}`, { name, description });
+        showToast('Project updated successfully.', 'success');
       } else {
         await api.post('/projects', { name, description });
+        showToast('Project created successfully.', 'success');
       }
       await fetchProjects();
       closeModal();
     } catch (err) {
-      console.error('Failed to save project', err);
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -86,8 +103,9 @@ export default function DashboardPage() {
       try {
         await api.delete(`/projects/${id}`);
         setProjects(projects.filter(p => p.id !== id));
+        showToast('Project deleted successfully.', 'success');
       } catch (err) {
-        console.error('Failed to delete project', err);
+        showToast(getErrorMessage(err), 'error');
       }
     }
   };
@@ -186,12 +204,12 @@ export default function DashboardPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                     <input
                       type="text"
-                      required
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => { setName(e.target.value); setValidationErrors({}); }}
+                      className={`w-full px-3 py-2 border ${validationErrors.name ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'} rounded-md shadow-sm focus:outline-none`}
                       placeholder="e.g. Website Redesign"
                     />
+                    {validationErrors.name && <p className="text-red-500 text-xs mt-1">{validationErrors.name}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
@@ -199,7 +217,7 @@ export default function DashboardPage() {
                       rows={3}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Brief details about the project..."
                     />
                   </div>
@@ -214,11 +232,11 @@ export default function DashboardPage() {
                   </button>
                   <button
                     type="submit"
-                    disabled={isSubmitting}
-                    className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center space-x-2"
+                    disabled={isSubmitting || !!validationErrors.name}
+                    className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center space-x-2 transition-colors"
                   >
                     {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                    <span>{editingId ? 'Save Changes' : 'Create Project'}</span>
+                    <span>{isSubmitting ? 'Saving...' : (editingId ? 'Save Changes' : 'Create Project')}</span>
                   </button>
                 </div>
               </form>

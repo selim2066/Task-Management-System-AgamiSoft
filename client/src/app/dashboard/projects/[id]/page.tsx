@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../../context/AuthContext';
+import { useToast } from '../../../../context/ToastContext';
+import { getErrorMessage } from '../../../../lib/errorHandler';
 import ProtectedRoute from '../../../../components/ProtectedRoute';
 import DashboardLayout from '../../../../components/DashboardLayout';
 import api from '../../../../lib/api';
@@ -15,6 +17,7 @@ export default function ProjectPage() {
   const router = useRouter();
   const id = params.id as string;
   const { user } = useAuth();
+  const { showToast } = useToast();
   
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -30,6 +33,7 @@ export default function ProjectPage() {
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<'TODO' | 'IN_PROGRESS' | 'DONE'>('TODO');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<{title?: string}>({});
 
   useEffect(() => {
     if (id && user) {
@@ -52,7 +56,7 @@ export default function ProjectPage() {
       const projRes = await api.get<Project>(`/projects/${id}`);
       setProject(projRes.data);
     } catch (err: any) {
-      console.error('Failed to fetch project details', err);
+      showToast(getErrorMessage(err), 'error');
       if (err.response?.status === 403 || err.response?.status === 404) {
         router.push('/dashboard');
       }
@@ -69,7 +73,7 @@ export default function ProjectPage() {
       const tasksRes = await api.get<Task[]>(url);
       setTasks(tasksRes.data);
     } catch (err) {
-      console.error('Failed to fetch tasks', err);
+      showToast(getErrorMessage(err), 'error');
     }
   };
 
@@ -77,8 +81,9 @@ export default function ProjectPage() {
     try {
       await api.put(`/tasks/${taskId}`, { status: newStatus });
       setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+      showToast('Task status updated.', 'success');
     } catch (err) {
-      console.error('Failed to update status', err);
+      showToast(getErrorMessage(err), 'error');
     }
   };
 
@@ -87,26 +92,38 @@ export default function ProjectPage() {
       try {
         await api.delete(`/tasks/${taskId}`);
         setTasks(tasks.filter(t => t.id !== taskId));
+        showToast('Task deleted successfully.', 'success');
       } catch (err) {
-        console.error('Failed to delete task', err);
+        showToast(getErrorMessage(err), 'error');
       }
     }
   };
 
+  const validate = () => {
+    const errors: {title?: string} = {};
+    if (!title.trim() || title.trim().length < 2) {
+      errors.title = 'Task title must be at least 2 characters.';
+    }
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!validate()) return;
     
     setIsSubmitting(true);
     try {
       await api.post('/tasks', { title, description, status, projectId: id });
       await fetchTasks(search, filterStatus);
+      showToast('Task created successfully.', 'success');
       setIsModalOpen(false);
       setTitle('');
       setDescription('');
       setStatus('TODO');
+      setValidationErrors({});
     } catch (err) {
-      console.error('Failed to create task', err);
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -153,7 +170,13 @@ export default function ProjectPage() {
                     Tasks
                   </h2>
                   <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={() => {
+                      setTitle('');
+                      setDescription('');
+                      setStatus('TODO');
+                      setValidationErrors({});
+                      setIsModalOpen(true);
+                    }}
                     className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors shadow-sm w-full sm:w-auto justify-center"
                   >
                     <Plus className="h-4 w-4" />
@@ -215,7 +238,13 @@ export default function ProjectPage() {
                     <div>
                       <p className="text-gray-500 mb-4">No tasks yet for this project.</p>
                       <button
-                        onClick={() => setIsModalOpen(true)}
+                        onClick={() => {
+                          setTitle('');
+                          setDescription('');
+                          setStatus('TODO');
+                          setValidationErrors({});
+                          setIsModalOpen(true);
+                        }}
                         className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"
                       >
                         <Plus className="h-4 w-4 mr-1" /> Create the first task
@@ -290,12 +319,12 @@ export default function ProjectPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                     <input
                       type="text"
-                      required
                       value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => { setTitle(e.target.value); setValidationErrors({}); }}
+                      className={`w-full px-3 py-2 border ${validationErrors.title ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'} rounded-md shadow-sm focus:outline-none`}
                       placeholder="e.g. Design Login Page"
                     />
+                    {validationErrors.title && <p className="text-red-500 text-xs mt-1">{validationErrors.title}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
@@ -303,7 +332,7 @@ export default function ProjectPage() {
                       rows={3}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Task details..."
                     />
                   </div>
@@ -312,7 +341,7 @@ export default function ProjectPage() {
                     <select
                       value={status}
                       onChange={(e) => setStatus(e.target.value as any)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white"
                     >
                       <option value="TODO">To Do</option>
                       <option value="IN_PROGRESS">In Progress</option>
@@ -330,11 +359,11 @@ export default function ProjectPage() {
                   </button>
                   <button
                     type="submit"
-                    disabled={isSubmitting}
-                    className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center space-x-2"
+                    disabled={isSubmitting || !!validationErrors.title}
+                    className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center space-x-2 transition-colors"
                   >
                     {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                    <span>Create Task</span>
+                    <span>{isSubmitting ? 'Saving...' : 'Create Task'}</span>
                   </button>
                 </div>
               </form>
