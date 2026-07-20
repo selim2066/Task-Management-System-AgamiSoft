@@ -35,6 +35,10 @@ export default function ProjectPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{title?: string}>({});
 
+  // Delete modal state
+  const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   useEffect(() => {
     if (id && user) {
       fetchProject();
@@ -87,22 +91,29 @@ export default function ProjectPage() {
     }
   };
 
-  const handleDelete = async (taskId: string) => {
-    if (window.confirm('Are you sure you want to delete this task?')) {
-      try {
-        await api.delete(`/tasks/${taskId}`);
-        setTasks(tasks.filter(t => t.id !== taskId));
-        showToast('Task deleted successfully.', 'success');
-      } catch (err) {
-        showToast(getErrorMessage(err), 'error');
-      }
+  const handleDelete = (taskId: string) => {
+    setDeleteTaskId(taskId);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTaskId) return;
+    setIsDeleting(true);
+    try {
+      await api.delete(`/tasks/${deleteTaskId}`);
+      setTasks(tasks.filter(t => t.id !== deleteTaskId));
+      showToast('Task deleted successfully.', 'success');
+      setDeleteTaskId(null);
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const validate = () => {
     const errors: {title?: string} = {};
     if (!title.trim() || title.trim().length < 2) {
-      errors.title = 'Task title must be at least 2 characters.';
+      errors.title = 'TASK TITLE MUST BE AT LEAST 2 CHARACTERS.';
     }
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -137,9 +148,9 @@ export default function ProjectPage() {
   const isFiltering = search !== '' || filterStatus !== '';
 
   const statusColors = {
-    TODO: 'bg-gray-100 text-gray-800 border-gray-200',
-    IN_PROGRESS: 'bg-blue-100 text-blue-800 border-blue-200',
-    DONE: 'bg-green-100 text-green-800 border-green-200'
+    TODO: 'bg-white text-black',
+    IN_PROGRESS: 'bg-[#FFC900] text-black',
+    DONE: 'bg-[#00E5FF] text-black'
   };
 
   return (
@@ -147,27 +158,44 @@ export default function ProjectPage() {
       <DashboardLayout>
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+            <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 flex items-center space-x-4">
+              <Loader2 className="h-10 w-10 text-black animate-spin stroke-[3]" />
+              <span className="text-xl font-black uppercase tracking-widest">LOADING...</span>
+            </div>
           </div>
         ) : !project ? (
-          <div className="text-center py-12">Project not found.</div>
+          <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-12 text-center">
+            <h2 className="text-2xl font-black uppercase">PROJECT NOT FOUND</h2>
+          </div>
         ) : (
-          <div>
-            <div className="mb-6">
-              <Link href="/dashboard" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-blue-600 mb-4 transition-colors">
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Back to Projects
-              </Link>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{project.name}</h1>
-              <p className="text-gray-600 max-w-3xl">{project.description || 'No description'}</p>
+          <div className="max-w-6xl mx-auto space-y-8">
+            <div className="flex flex-col space-y-4">
+              <div>
+                <Link href="/dashboard" className="inline-flex items-center text-sm font-black uppercase text-black bg-white border-2 border-black px-3 py-1.5 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all mb-6">
+                  <ArrowLeft className="h-4 w-4 mr-2 stroke-[3]" />
+                  BACK TO PROJECTS
+                </Link>
+              </div>
+              <div className="bg-white border-4 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden">
+                {/* Decorative tape */}
+                <div className="absolute -top-4 -right-4 w-16 h-8 bg-[#FF90E8]/50 rotate-[45deg]"></div>
+                
+                <h1 className="text-4xl font-black text-black mb-3 uppercase tracking-wide">
+                  <span className="bg-[#FFC900] px-2 border-2 border-black">{project.name}</span>
+                </h1>
+                <p className="text-lg font-bold text-black max-w-3xl border-l-4 border-[#00E5FF] pl-4 py-1">
+                  {project.description || <span className="italic opacity-50 bg-gray-200 px-1 uppercase">NO DESCRIPTION PROVIDED.</span>}
+                </p>
+              </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="p-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col space-y-4">
+            <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+              {/* Toolbar Header */}
+              <div className="p-4 sm:px-6 py-4 border-b-4 border-black flex flex-col space-y-6 bg-[#00E5FF]">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-                  <h2 className="text-xl font-bold text-gray-800 flex items-center">
-                    <ListTodo className="h-5 w-5 mr-2 text-blue-600" />
-                    Tasks
+                  <h2 className="text-2xl font-black text-black flex items-center uppercase tracking-widest bg-white border-2 border-black px-3 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                    <ListTodo className="h-6 w-6 mr-2 stroke-[3]" />
+                    TASKS
                   </h2>
                   <button
                     onClick={() => {
@@ -177,122 +205,139 @@ export default function ProjectPage() {
                       setValidationErrors({});
                       setIsModalOpen(true);
                     }}
-                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors shadow-sm w-full sm:w-auto justify-center"
+                    className="flex items-center space-x-2 bg-[#FF90E8] text-black px-5 py-2.5 font-black uppercase border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all focus:outline-none w-full sm:w-auto justify-center"
                   >
-                    <Plus className="h-4 w-4" />
-                    <span>New Task</span>
+                    <Plus className="h-5 w-5 stroke-[3]" />
+                    <span>NEW TASK</span>
                   </button>
                 </div>
 
                 {/* Filter Controls */}
-                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 items-center bg-gray-50 p-3 rounded-lg border border-gray-100">
+                <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 items-center bg-white p-4 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                   <div className="relative w-full sm:w-64">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search className="h-4 w-4 text-gray-400" />
+                      <Search className="h-5 w-5 text-black stroke-[3]" />
                     </div>
                     <input
                       type="text"
-                      placeholder="Search tasks by title..."
+                      placeholder="SEARCH TASKS..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      className="block w-full pl-10 pr-3 py-2.5 border-2 border-black font-black uppercase bg-white placeholder-gray-400 focus:outline-none focus:translate-x-[2px] focus:translate-y-[2px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:shadow-none transition-all"
                     />
                   </div>
-                  <div className="w-full sm:w-48">
+                  <div className="w-full sm:w-48 relative">
                     <select
                       value={filterStatus}
                       onChange={(e) => setFilterStatus(e.target.value)}
-                      className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white"
+                      className="block w-full pl-3 pr-10 py-2.5 text-base border-2 border-black font-black uppercase focus:outline-none focus:translate-x-[2px] focus:translate-y-[2px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:shadow-none transition-all bg-[#FFC900] appearance-none"
                     >
-                      <option value="">All Statuses</option>
-                      <option value="TODO">To Do</option>
-                      <option value="IN_PROGRESS">In Progress</option>
-                      <option value="DONE">Done</option>
+                      <option value="">ALL STATUSES</option>
+                      <option value="TODO">TO DO</option>
+                      <option value="IN_PROGRESS">IN PROGRESS</option>
+                      <option value="DONE">DONE</option>
                     </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-black">
+                      <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                    </div>
                   </div>
                   {isFiltering && (
                     <button
                       onClick={clearFilters}
-                      className="flex items-center text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                      className="flex items-center text-sm font-black uppercase text-black bg-[#FF6B6B] border-2 border-black px-3 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all focus:outline-none"
                     >
-                      <X className="h-4 w-4 mr-1" />
-                      Clear filters
+                      <X className="h-4 w-4 mr-1 stroke-[3]" />
+                      CLEAR FILTERS
                     </button>
                   )}
                 </div>
               </div>
 
               {tasks.length === 0 ? (
-                <div className="p-12 text-center">
+                <div className="p-16 text-center bg-[#FFFDF9]">
                   {isFiltering ? (
                     <div>
-                      <p className="text-gray-500 mb-4">No tasks match your search/filter.</p>
+                      <p className="text-xl font-black uppercase mb-6">NO TASKS MATCH YOUR FILTER.</p>
                       <button
                         onClick={clearFilters}
-                        className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"
+                        className="inline-flex items-center text-black bg-[#FF6B6B] border-2 border-black px-4 py-2 font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all focus:outline-none"
                       >
-                        Clear filters
+                        <X className="h-4 w-4 mr-1 stroke-[3]" /> CLEAR FILTERS
                       </button>
                     </div>
                   ) : (
                     <div>
-                      <p className="text-gray-500 mb-4">No tasks yet for this project.</p>
-                      <button
-                        onClick={() => {
-                          setTitle('');
-                          setDescription('');
-                          setStatus('TODO');
-                          setValidationErrors({});
-                          setIsModalOpen(true);
-                        }}
-                        className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"
-                      >
-                        <Plus className="h-4 w-4 mr-1" /> Create the first task
-                      </button>
+                      <p className="text-xl font-black uppercase mb-6 bg-[#FFC900] inline-block px-3 py-1 border-2 border-black">NO TASKS YET FOR THIS PROJECT.</p>
+                      <div className="mt-4">
+                        <button
+                          onClick={() => {
+                            setTitle('');
+                            setDescription('');
+                            setStatus('TODO');
+                            setValidationErrors({});
+                            setIsModalOpen(true);
+                          }}
+                          className="inline-flex items-center text-black bg-[#00E5FF] border-2 border-black px-6 py-3 font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all focus:outline-none"
+                        >
+                          <Plus className="h-5 w-5 mr-2 stroke-[3]" /> CREATE THE FIRST TASK
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                <div className="overflow-x-auto bg-[#FFFDF9]">
+                  <table className="min-w-full divide-y-4 divide-black border-b-4 border-black">
+                    <thead className="bg-[#FF90E8]">
                       <tr>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee</th>
-                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th scope="col" className="px-6 py-4 text-left text-sm font-black text-black uppercase tracking-widest border-r-4 border-black">TASK</th>
+                        <th scope="col" className="px-6 py-4 text-left text-sm font-black text-black uppercase tracking-widest border-r-4 border-black">STATUS</th>
+                        <th scope="col" className="px-6 py-4 text-left text-sm font-black text-black uppercase tracking-widest border-r-4 border-black">ASSIGNEE</th>
+                        <th scope="col" className="px-6 py-4 text-right text-sm font-black text-black uppercase tracking-widest">ACTION</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white divide-y-2 divide-black">
                       {tasks.map((task) => (
-                        <tr key={task.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="text-sm font-medium text-gray-900">{task.title}</div>
+                         <tr key={task.id} className="hover:bg-gray-100 transition-colors group">
+                          <td className="px-6 py-5 border-r-4 border-black">
+                            <div className="text-lg font-black text-black uppercase leading-tight">{task.title}</div>
                             {task.description && (
-                              <div className="text-sm text-gray-500 mt-1 line-clamp-1">{task.description}</div>
+                              <div className="text-sm font-bold text-gray-700 mt-2 line-clamp-2">{task.description}</div>
                             )}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <select
-                              value={task.status}
-                              onChange={(e) => handleStatusChange(task.id, e.target.value as any)}
-                              className={`text-xs font-bold rounded-full px-3 py-1 border appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${statusColors[task.status]}`}
-                            >
-                              <option value="TODO">TODO</option>
-                              <option value="IN_PROGRESS">IN PROGRESS</option>
-                              <option value="DONE">DONE</option>
-                            </select>
+                          <td className="px-6 py-5 whitespace-nowrap border-r-4 border-black">
+                            <div className="relative inline-block">
+                              <select
+                                value={task.status}
+                                onChange={(e) => handleStatusChange(task.id, e.target.value as any)}
+                                className={`text-sm font-black uppercase px-4 py-2 border-2 border-black appearance-none cursor-pointer focus:outline-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all pr-8 ${statusColors[task.status]}`}
+                              >
+                                <option value="TODO">TODO</option>
+                                <option value="IN_PROGRESS">IN PROGRESS</option>
+                                <option value="DONE">DONE</option>
+                              </select>
+                              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-black">
+                                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                              </div>
+                            </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {task.assignedTo?.name || <span className="text-gray-400 italic">Unassigned</span>}
+                          <td className="px-6 py-5 whitespace-nowrap border-r-4 border-black">
+                            <div className="inline-block bg-white border-2 border-black px-3 py-1 text-sm font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                              {task.assignedTo?.name || <span className="opacity-50">UNASSIGNED</span>}
+                            </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <td className="px-6 py-5 whitespace-nowrap text-right">
                             <button
-                              onClick={() => handleDelete(task.id)}
-                              className="text-gray-400 hover:text-red-600 transition-colors p-1 rounded-md hover:bg-red-50"
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDelete(task.id);
+                              }}
+                              className="inline-flex items-center justify-center bg-[#FF6B6B] border-2 border-black p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all focus:outline-none"
                               title="Delete Task"
                             >
-                              <Trash2 className="h-5 w-5" />
+                              <Trash2 className="h-5 w-5 stroke-[3] text-black pointer-events-none" />
                             </button>
                           </td>
                         </tr>
@@ -307,66 +352,113 @@ export default function ProjectPage() {
 
         {/* Modal */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800">New Task</h2>
-                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-white border-4 border-black w-full max-w-md shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
+              <div className="bg-[#FF90E8] border-b-4 border-black px-4 py-3 flex justify-between items-center">
+                <h2 className="text-xl font-black uppercase tracking-widest text-black">NEW TASK</h2>
+                <button onClick={() => setIsModalOpen(false)} className="bg-white border-2 border-black p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all focus:outline-none">
+                  <X className="h-5 w-5 stroke-[3] text-black" />
+                </button>
               </div>
-              <form onSubmit={handleSubmit} className="p-6">
-                <div className="space-y-4">
+              <form onSubmit={handleSubmit} className="p-6 bg-[#FFFDF9]">
+                <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <label className="block text-sm font-black text-black mb-2 uppercase">
+                      <span className="bg-[#00E5FF] px-1 border border-black">TASK TITLE</span>
+                    </label>
                     <input
                       type="text"
                       value={title}
                       onChange={(e) => { setTitle(e.target.value); setValidationErrors({}); }}
-                      className={`w-full px-3 py-2 border ${validationErrors.title ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'} rounded-md shadow-sm focus:outline-none`}
-                      placeholder="e.g. Design Login Page"
+                      className={`w-full px-4 py-3 bg-white text-black text-lg font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all ${validationErrors.title ? 'bg-red-100' : ''}`}
+                      placeholder="ENTER TASK TITLE..."
                     />
-                    {validationErrors.title && <p className="text-red-500 text-xs mt-1">{validationErrors.title}</p>}
+                    {validationErrors.title && <p className="text-[#FF6B6B] font-black text-sm mt-2 uppercase">{validationErrors.title}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+                    <label className="block text-sm font-black text-black mb-2 uppercase">
+                      <span className="bg-[#FFC900] px-1 border border-black">DESCRIPTION (OPTIONAL)</span>
+                    </label>
                     <textarea
                       rows={3}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Task details..."
+                      className="w-full px-4 py-3 bg-white text-black text-base font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all resize-none"
+                      placeholder="TASK DETAILS..."
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value as any)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    >
-                      <option value="TODO">To Do</option>
-                      <option value="IN_PROGRESS">In Progress</option>
-                      <option value="DONE">Done</option>
-                    </select>
+                    <label className="block text-sm font-black text-black mb-2 uppercase">
+                      <span className="bg-white px-1 border border-black">STATUS</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={status}
+                        onChange={(e) => setStatus(e.target.value as any)}
+                        className="w-full px-4 py-3 bg-white text-black text-lg font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all appearance-none"
+                      >
+                        <option value="TODO">TODO</option>
+                        <option value="IN_PROGRESS">IN PROGRESS</option>
+                        <option value="DONE">DONE</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-black">
+                        <svg className="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="mt-6 flex justify-end space-x-3">
+                <div className="mt-8 flex justify-end space-x-4">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-6 py-2 bg-white border-2 border-black text-base font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all focus:outline-none"
                   >
-                    Cancel
+                    CANCEL
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting || !!validationErrors.title}
-                    className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center space-x-2 transition-colors"
+                    className="px-6 py-2 bg-[#00E5FF] border-2 border-black text-base font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 focus:outline-none"
                   >
-                    {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                    <span>{isSubmitting ? 'Saving...' : 'Create Task'}</span>
+                    {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin stroke-[3]" /> : null}
+                    <span>{isSubmitting ? 'SAVING...' : 'CREATE TASK'}</span>
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+        {/* Delete Confirmation Modal */}
+        {deleteTaskId && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-white border-4 border-black w-full max-w-sm shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
+              <div className="bg-[#FF6B6B] border-b-4 border-black px-4 py-3 flex justify-between items-center">
+                <h2 className="text-xl font-black uppercase tracking-widest text-black">CONFIRM DELETE</h2>
+                <button onClick={() => setDeleteTaskId(null)} className="bg-white border-2 border-black p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all focus:outline-none">
+                  <X className="h-5 w-5 stroke-[3] text-black" />
+                </button>
+              </div>
+              <div className="p-6 bg-[#FFFDF9]">
+                <p className="text-lg font-black uppercase text-black mb-8 text-center bg-[#FFC900] border-2 border-black p-3">
+                  WARNING: THIS WILL DELETE THE TASK PERMANENTLY. CONTINUE?
+                </p>
+                <div className="flex justify-center space-x-4">
+                  <button
+                    onClick={() => setDeleteTaskId(null)}
+                    className="px-6 py-2 bg-white border-2 border-black text-base font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all focus:outline-none"
+                  >
+                    CANCEL
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    disabled={isDeleting}
+                    className="px-6 py-2 bg-[#FF6B6B] border-2 border-black text-base font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 focus:outline-none"
+                  >
+                    {isDeleting ? <Loader2 className="h-5 w-5 animate-spin stroke-[3]" /> : <Trash2 className="h-5 w-5 stroke-[3]" />}
+                    <span>{isDeleting ? 'DELETING...' : 'DELETE'}</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

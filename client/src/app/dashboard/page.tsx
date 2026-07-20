@@ -8,12 +8,13 @@ import { useToast } from '../../context/ToastContext';
 import { getErrorMessage } from '../../lib/errorHandler';
 import api from '../../lib/api';
 import { Project } from '../../types';
-import Link from 'next/link';
-import { FolderPlus, Trash2, Edit2, ChevronRight, Loader2, FolderKanban } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Trash2, Edit2, Loader2, FolderKanban, Plus, X } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const { showToast } = useToast();
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -24,6 +25,10 @@ export default function DashboardPage() {
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{name?: string}>({});
+
+  // Delete modal state
+  const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchProjects();
@@ -68,7 +73,7 @@ export default function DashboardPage() {
   const validate = () => {
     const errors: {name?: string} = {};
     if (!name.trim() || name.trim().length < 2) {
-      errors.name = 'Project name must be at least 2 characters.';
+      errors.name = 'PROJECT NAME MUST BE AT LEAST 2 CHARACTERS.';
     }
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -96,150 +101,225 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
+  const handleDelete = (e: React.MouseEvent, id: string) => {
     e.preventDefault();
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this project?')) {
-      try {
-        await api.delete(`/projects/${id}`);
-        setProjects(projects.filter(p => p.id !== id));
-        showToast('Project deleted successfully.', 'success');
-      } catch (err) {
-        showToast(getErrorMessage(err), 'error');
-      }
+    setDeleteProjectId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteProjectId) return;
+    setIsDeleting(true);
+    try {
+      await api.delete(`/projects/${deleteProjectId}`);
+      setProjects(projects.filter(p => p.id !== deleteProjectId));
+      showToast('Project deleted successfully.', 'success');
+      setDeleteProjectId(null);
+    } catch (err) {
+      showToast(getErrorMessage(err), 'error');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   return (
     <ProtectedRoute>
       <DashboardLayout>
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-10 space-y-4 sm:space-y-0">
+          <div className="bg-white border-2 border-black p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
+            <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-wide">PROJECTS DIRECTORY</h1>
+          </div>
           <button
             onClick={() => openModal()}
-            className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors shadow-sm"
+            className="group flex items-center justify-center space-x-2 bg-[#00E5FF] text-black border-2 border-black px-6 py-3 font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all focus:outline-none"
           >
-            <FolderPlus className="h-4 w-4" />
-            <span>New Project</span>
+            <Plus className="h-6 w-6 stroke-[3]" />
+            <span>NEW PROJECT</span>
           </button>
         </div>
 
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+            <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 flex items-center space-x-4">
+              <Loader2 className="h-10 w-10 text-black animate-spin stroke-[3]" />
+              <span className="text-xl font-black uppercase tracking-widest">LOADING...</span>
+            </div>
           </div>
         ) : projects.length === 0 ? (
-          <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center shadow-sm">
-            <div className="flex justify-center mb-4">
-              <FolderKanban className="h-16 w-16 text-gray-400" />
+          <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-12 text-center relative overflow-hidden">
+            {/* Decorative tape */}
+            <div className="absolute -top-4 -left-4 w-16 h-8 bg-[#FFC900]/50 rotate-[-45deg]"></div>
+            <div className="absolute top-4 right-4 w-16 h-8 bg-[#00E5FF]/50 rotate-[30deg]"></div>
+            
+            <div className="flex justify-center mb-6">
+              <div className="bg-[#FF90E8] border-2 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <FolderKanban className="h-16 w-16 text-black stroke-[2]" />
+              </div>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No projects yet</h3>
-            <p className="text-gray-500 mb-6">Get started by creating your first project.</p>
+            <h3 className="text-2xl sm:text-3xl font-black uppercase mb-4">EMPTY DIRECTORY</h3>
+            <p className="text-lg font-bold mb-8 max-w-md mx-auto">CREATE A PROJECT TO START TRACKING TASKS.</p>
             <button
               onClick={() => openModal()}
-              className="inline-flex items-center space-x-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-md font-medium transition-colors shadow-sm"
+              className="inline-flex items-center space-x-2 bg-[#FFC900] border-2 border-black text-black px-8 py-3 font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all text-lg focus:outline-none"
             >
-              <FolderPlus className="h-4 w-4" />
-              <span>Create Project</span>
+              <Plus className="h-6 w-6 stroke-[3]" />
+              <span>INITIALIZE</span>
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {projects.map((project) => (
-              <Link href={`/dashboard/projects/${project.id}`} key={project.id} className="block group">
-                <div className="bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-200 transition-all p-5 h-full flex flex-col cursor-pointer">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+              <div 
+                key={project.id} 
+                onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                className="bg-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all duration-200 p-0 flex flex-col cursor-pointer group"
+              >
+                {/* Title bar of the card */}
+                <div className="bg-[#FFC900] border-b-4 border-black px-4 py-3 flex justify-between items-center group-hover:bg-[#FF90E8] transition-colors">
+                  <div className="flex items-center space-x-3 w-full pr-2">
+                    <FolderKanban className="h-6 w-6 text-black stroke-[2.5] flex-shrink-0" />
+                    <h3 className="text-lg font-black uppercase truncate w-full" title={project.name}>
                       {project.name}
                     </h3>
-                    <div className="flex space-x-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          openModal(project);
-                        }}
-                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                        title="Edit"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={(e) => handleDelete(e, project.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-500 mb-4 line-clamp-2 flex-grow">
-                    {project.description || 'No description provided.'}
-                  </p>
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div className="flex items-center space-x-1.5 text-sm text-gray-500 font-medium bg-gray-100 px-2.5 py-1 rounded-md">
-                      <span>{project._count?.tasks || 0}</span>
-                      <span>Tasks</span>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
                   </div>
                 </div>
-              </Link>
+                
+                <div className="p-4 flex flex-col flex-grow relative">
+                  <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white border-2 border-black p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openModal(project);
+                      }}
+                      className="hover:bg-[#00E5FF] p-1.5 transition-colors border-2 border-transparent hover:border-black focus:outline-none"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4 text-black stroke-[3]" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDelete(e, project.id)}
+                      className="hover:bg-[#FF6B6B] p-1.5 transition-colors border-2 border-transparent hover:border-black focus:outline-none"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4 text-black stroke-[3]" />
+                    </button>
+                  </div>
+
+                  <p className="text-sm font-bold mt-2 mb-6 line-clamp-3 leading-relaxed">
+                    {project.description || <span className="italic opacity-50 bg-gray-200 px-1 font-black uppercase">NO DESCRIPTION</span>}
+                  </p>
+                  
+                  <div className="mt-auto flex justify-between items-end pt-2">
+                    <div className="bg-[#00E5FF] text-black font-black text-sm px-3 py-1.5 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                      TASKS: {project._count?.tasks || 0}
+                    </div>
+                    <div className="text-xs font-black uppercase text-black bg-white border-2 border-black px-2 py-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                      BY: {project.owner?.name?.[0]?.toUpperCase() || 'U'}
+                    </div>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         )}
 
         {/* Modal */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
-              <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800">
-                  {editingId ? 'Edit Project' : 'New Project'}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-white border-4 border-black w-full max-w-md shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
+              {/* Modal Title bar - Reality popup style */}
+              <div className="bg-[#FF6B6B] border-b-4 border-black px-4 py-3 flex justify-between items-center">
+                <h2 className="text-xl font-black uppercase tracking-widest text-black">
+                  {editingId ? 'EDIT_PROJECT' : 'CREATE_PROJECT'}
                 </h2>
-                <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                <button onClick={closeModal} className="bg-white border-2 border-black p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all focus:outline-none">
+                  <X className="h-5 w-5 stroke-[3] text-black" />
+                </button>
               </div>
-              <form onSubmit={handleSubmit} className="p-6">
-                <div className="space-y-4">
+              <form onSubmit={handleSubmit} className="p-6 bg-[#FFFDF9]">
+                <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <label className="block text-sm font-black text-black mb-2 uppercase">
+                      <span className="bg-[#00E5FF] px-1 border border-black">PROJECT NAME</span>
+                    </label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => { setName(e.target.value); setValidationErrors({}); }}
-                      className={`w-full px-3 py-2 border ${validationErrors.name ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'} rounded-md shadow-sm focus:outline-none`}
-                      placeholder="e.g. Website Redesign"
+                      className={`w-full px-4 py-3 bg-white text-black text-lg font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all ${validationErrors.name ? 'bg-red-100' : ''}`}
+                      placeholder="ENTER NAME..."
                     />
-                    {validationErrors.name && <p className="text-red-500 text-xs mt-1">{validationErrors.name}</p>}
+                    {validationErrors.name && <p className="text-[#FF6B6B] font-black text-sm mt-2 uppercase">{validationErrors.name}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+                    <label className="block text-sm font-black text-black mb-2 uppercase">
+                      <span className="bg-[#FFC900] px-1 border border-black">DESCRIPTION (OPTIONAL)</span>
+                    </label>
                     <textarea
                       rows={3}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Brief details about the project..."
+                      className="w-full px-4 py-3 bg-white text-black text-base font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all resize-none"
+                      placeholder="ENTER DETAILS..."
                     />
                   </div>
                 </div>
-                <div className="mt-6 flex justify-end space-x-3">
+                <div className="mt-8 flex justify-end space-x-4">
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-6 py-2 bg-white border-2 border-black text-base font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all focus:outline-none"
                   >
-                    Cancel
+                    CANCEL
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting || !!validationErrors.name}
-                    className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center space-x-2 transition-colors"
+                    className="px-6 py-2 bg-[#00E5FF] border-2 border-black text-base font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 focus:outline-none"
                   >
-                    {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                    <span>{isSubmitting ? 'Saving...' : (editingId ? 'Save Changes' : 'Create Project')}</span>
+                    {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin stroke-[3]" /> : null}
+                    <span>{isSubmitting ? 'SAVING...' : 'CONFIRM'}</span>
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+        {/* Delete Confirmation Modal */}
+        {deleteProjectId && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-white border-4 border-black w-full max-w-sm shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
+              <div className="bg-[#FF6B6B] border-b-4 border-black px-4 py-3 flex justify-between items-center">
+                <h2 className="text-xl font-black uppercase tracking-widest text-black">CONFIRM DELETE</h2>
+                <button onClick={() => setDeleteProjectId(null)} className="bg-white border-2 border-black p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all focus:outline-none">
+                  <X className="h-5 w-5 stroke-[3] text-black" />
+                </button>
+              </div>
+              <div className="p-6 bg-[#FFFDF9]">
+                <p className="text-lg font-black uppercase text-black mb-8 text-center bg-[#FFC900] border-2 border-black p-3">
+                  WARNING: THIS WILL DELETE THE PROJECT AND ALL ITS TASKS. CONTINUE?
+                </p>
+                <div className="flex justify-center space-x-4">
+                  <button
+                    onClick={() => setDeleteProjectId(null)}
+                    className="px-6 py-2 bg-white border-2 border-black text-base font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all focus:outline-none"
+                  >
+                    CANCEL
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    disabled={isDeleting}
+                    className="px-6 py-2 bg-[#FF6B6B] border-2 border-black text-base font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 focus:outline-none"
+                  >
+                    {isDeleting ? <Loader2 className="h-5 w-5 animate-spin stroke-[3]" /> : <Trash2 className="h-5 w-5 stroke-[3]" />}
+                    <span>{isDeleting ? 'DELETING...' : 'DELETE'}</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
