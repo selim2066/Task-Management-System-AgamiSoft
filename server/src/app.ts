@@ -3,6 +3,7 @@ import cors from 'cors';
 import { prisma } from './utils/prisma';
 import authRoutes from './routes/auth.routes';
 import projectRoutes from './routes/project.routes';
+import taskRoutes from './routes/task.routes';
 
 const app = express();
 
@@ -12,7 +13,7 @@ app.use(express.json());
 // Future route mounts will go here:
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
-// app.use('/api/tasks', taskRoutes)
+app.use('/api/tasks', taskRoutes);
 
 app.get('/health', async (req: Request, res: Response, next: NextFunction) => {
   try {
