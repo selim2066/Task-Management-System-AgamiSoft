@@ -212,7 +212,7 @@ export default function LoginPage() {
         
         <div className="mt-8 text-center bg-white border-2 border-black px-4 py-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
           <p className="text-sm text-black font-black uppercase">
-            DON'T HAVE AN ACCOUNT?{' '}
+            DON&apos;T HAVE AN ACCOUNT?{' '}
             <Link href="/register" className="text-[#7C4DFF] hover:text-black underline underline-offset-4 decoration-2 transition-colors">
               CREATE ONE
             </Link>
