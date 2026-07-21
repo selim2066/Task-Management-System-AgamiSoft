@@ -71,6 +71,8 @@ Follow these step-by-step instructions to get the application running locally fr
 ### Database Setup
 This project requires a PostgreSQL database. The database schema is managed via Prisma and is located at `server/prisma/schema.prisma`. 
 
+![Entity Relationship Diagram](./client/public/erd.svg)
+
 To initialize your local database, run `npx prisma migrate dev` from within the `server/` directory. This command will create the necessary tables in your database.
 
 After migrating, you must populate the database with required roles and test accounts by running `npx prisma db seed`. The seed script automatically provisions the following test accounts:
