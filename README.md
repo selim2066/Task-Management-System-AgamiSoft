@@ -89,13 +89,13 @@ The seed script also creates an initial project and tasks so that you can evalua
 | **POST** | `/api/auth/login` | No | - | Authenticate user and return JWT |
 | **GET** | `/api/projects/admin/all` | Yes | ADMIN | Fetch all projects system-wide |
 | **POST** | `/api/projects` | Yes | - | Create a new project |
-| **GET** | `/api/projects` | Yes | - | Get all projects owned by the authenticated user |
+| **GET** | `/api/projects` | Yes | - | Get projects — returns all projects system-wide if the user is ADMIN, or only projects owned by the user if role is USER |
 | **GET** | `/api/projects/:id` | Yes | - | Get details of a specific project |
 | **PUT** | `/api/projects/:id` | Yes | - | Update a specific project |
 | **DELETE** | `/api/projects/:id` | Yes | - | Delete a specific project |
 | **GET** | `/api/tasks/admin/all` | Yes | ADMIN | Fetch all tasks system-wide |
 | **POST** | `/api/tasks` | Yes | - | Create a new task within a project |
-| **GET** | `/api/tasks` | Yes | - | Get tasks (Supports `?projectId=`, `?search=`, and `?status=` filters) |
+| **GET** | `/api/tasks` | Yes | - | ADMIN sees all tasks; USER sees only tasks belonging to projects they own or tasks assigned to them. (Supports `?projectId=`, `?search=`, and `?status=` filters) |
 | **GET** | `/api/tasks/:id` | Yes | - | Get details of a specific task |
 | **PUT** | `/api/tasks/:id` | Yes | - | Update a specific task |
 | **DELETE** | `/api/tasks/:id` | Yes | - | Delete a specific task |
