@@ -8,7 +8,7 @@ import taskRoutes from './routes/task.routes';
 const app = express();
 
 app.use(cors({
-  origin: ['https://your-frontend.vercel.app', 'http://localhost:3000'],
+  origin: ['https://tms-task-msr.vercel.app', 'http://localhost:3000'],
   credentials: true,
 }));
 app.use(express.json());
