@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AppError } from '../utils/AppError';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
+import { JWT_SECRET } from '../utils/env';
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
