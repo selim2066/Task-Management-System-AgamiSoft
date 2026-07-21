@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { 
   CheckCircle2, 
@@ -8,12 +9,15 @@ import {
   ArrowRight, 
   LayoutDashboard,
   LogOut,
-  User
+  User,
+  Menu,
+  X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Home() {
   const { user, logout } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div 
@@ -33,10 +37,10 @@ export default function Home() {
               <span className="text-lg font-black uppercase tracking-widest">TMS_</span>
             </Link>
 
-            <div className="flex items-center space-x-4">
+            <div className="hidden sm:flex items-center space-x-4">
               {user ? (
                 <>
-                  <div className="hidden sm:flex items-center space-x-2 bg-white border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] px-3 py-1.5">
+                  <div className="flex items-center space-x-2 bg-white border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] px-3 py-1.5">
                     <User className="h-4 w-4 text-black stroke-[3]" />
                     <span className="text-sm font-bold uppercase">{user?.name} <span className="bg-[#00E5FF] px-1 ml-1 border border-black font-black">{user?.role}</span></span>
                   </div>
@@ -53,7 +57,7 @@ export default function Home() {
                     title="Logout"
                   >
                     <LogOut className="h-4 w-4 stroke-[3]" />
-                    <span className="hidden sm:inline">LOGOUT</span>
+                    <span>LOGOUT</span>
                   </button>
                 </>
               ) : (
@@ -73,8 +77,64 @@ export default function Home() {
                 </>
               )}
             </div>
+
+            {/* Mobile Hamburger Button */}
+            <div className="sm:hidden flex items-center">
+              <button 
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 border-2 border-black bg-[#FFEA00] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] transition-all"
+              >
+                {mobileMenuOpen ? <X className="h-6 w-6 stroke-[3]" /> : <Menu className="h-6 w-6 stroke-[3]" />}
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {mobileMenuOpen && (
+          <div className="sm:hidden border-t-4 border-black bg-white p-4 flex flex-col space-y-4">
+            {user ? (
+              <>
+                <div className="flex justify-center items-center space-x-2 bg-white border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] px-3 py-2">
+                  <User className="h-4 w-4 text-black stroke-[3]" />
+                  <span className="text-sm font-bold uppercase">{user?.name} <span className="bg-[#00E5FF] px-1 ml-1 border border-black font-black">{user?.role}</span></span>
+                </div>
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex justify-center items-center space-x-2 text-sm text-black bg-[#00E5FF] px-4 py-3 border-2 border-black font-black uppercase shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] transition-all"
+                >
+                  <LayoutDashboard className="h-4 w-4 stroke-[3]" />
+                  <span>DASHBOARD</span>
+                </Link>
+                <button
+                  onClick={() => { logout(); setMobileMenuOpen(false); }}
+                  className="flex justify-center items-center space-x-2 text-sm text-black bg-[#FF90E8] px-4 py-3 border-2 border-black font-black uppercase shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] transition-all"
+                >
+                  <LogOut className="h-4 w-4 stroke-[3]" />
+                  <span>LOGOUT</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center text-sm text-black bg-white px-4 py-3 border-2 border-black font-black uppercase shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] transition-all"
+                >
+                  SIGN IN
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center text-sm text-black bg-[#00E5FF] px-4 py-3 border-2 border-black font-black uppercase shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] transition-all"
+                >
+                  GET STARTED
+                </Link>
+              </>
+            )}
+          </div>
+        )}
       </nav>
 
       {/* Main Content */}

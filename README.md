@@ -1,5 +1,12 @@
 # Task Management System
 
+## Live Demo
+- **Frontend**: https://tms-task-msr.vercel.app
+- **Backend API**: https://task-management-system-agamisoft.onrender.com
+
+**Test accounts:**
+- **Admin**: `admin@example.com` / `Admin123!`
+- **User**: `user@example.com` / `User123!`
 ### Overview
 The Task Management System is a comprehensive full-stack application designed to help users organize projects and tasks effectively. It features a modern, responsive UI with robust Role-Based Access Control (RBAC), allowing regular users to manage their personal workspaces while providing administrators with system-wide oversight. Core features include secure authentication, full CRUD capabilities for projects and tasks, real-time debounced search, and status filtering.
 
