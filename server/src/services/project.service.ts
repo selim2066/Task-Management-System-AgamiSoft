@@ -35,9 +35,19 @@ export const projectService = {
           _count: {
             select: { tasks: true },
           },
+          tasks: {
+            where: { status: 'DONE' },
+            select: { id: true },
+          },
         },
       });
-      return { data, pagination: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
+
+      const mappedData = data.map(project => {
+        const { tasks, ...rest } = project;
+        return { ...rest, doneTasksCount: tasks.length };
+      });
+
+      return { data: mappedData, pagination: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
     }
 
     const where = { ownerId: user.id };
@@ -50,9 +60,19 @@ export const projectService = {
         _count: {
           select: { tasks: true },
         },
+        tasks: {
+          where: { status: 'DONE' },
+          select: { id: true },
+        },
       },
     });
-    return { data, pagination: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
+
+    const mappedData = data.map(project => {
+      const { tasks, ...rest } = project;
+      return { ...rest, doneTasksCount: tasks.length };
+    });
+
+    return { data: mappedData, pagination: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
   },
 
   async getProjectById(id: string, user: UserContext) {
@@ -65,6 +85,10 @@ export const projectService = {
         _count: {
           select: { tasks: true },
         },
+        tasks: {
+          where: { status: 'DONE' },
+          select: { id: true },
+        },
       },
     });
 
@@ -76,7 +100,8 @@ export const projectService = {
       throw new AppError('Forbidden: You do not have access to this project', 403);
     }
 
-    return project;
+    const { tasks, ...rest } = project;
+    return { ...rest, doneTasksCount: tasks.length };
   },
 
   async updateProject(id: string, user: UserContext, data: { name?: string; description?: string }) {
@@ -113,8 +138,18 @@ export const projectService = {
         _count: {
           select: { tasks: true },
         },
+        tasks: {
+          where: { status: 'DONE' },
+          select: { id: true },
+        },
       },
     });
-    return { data, pagination: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
+
+    const mappedData = data.map(project => {
+      const { tasks, ...rest } = project;
+      return { ...rest, doneTasksCount: tasks.length };
+    });
+
+    return { data: mappedData, pagination: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
   },
 };

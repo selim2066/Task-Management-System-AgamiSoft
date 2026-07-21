@@ -237,12 +237,36 @@ export default function DashboardPage() {
                     {project.description || <span className="italic opacity-50 bg-gray-200 px-1 font-black uppercase">NO DESCRIPTION</span>}
                   </p>
 
-                  <div className="mt-auto flex justify-between items-end pt-2">
-                    <div className="bg-[#00E5FF] text-black font-black text-sm px-3 py-1.5 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                      TASKS: {project._count?.tasks || 0}
+                  <div className="mt-auto flex flex-col space-y-4 pt-2">
+                    {/* Progress Bar */}
+                    <div>
+                      <div className="flex justify-between text-xs font-black uppercase mb-1 text-black">
+                        <span>PROGRESS</span>
+                        <span>
+                          {project.doneTasksCount || 0}/{project._count?.tasks || 0} 
+                          <span className="ml-1 opacity-70">
+                            ({project._count?.tasks ? Math.round(((project.doneTasksCount || 0) / project._count.tasks) * 100) : 0}%)
+                          </span>
+                        </span>
+                      </div>
+                      <div className="w-full bg-white border-2 border-black h-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
+                        <div 
+                          className="bg-[#FF90E8] h-full transition-all duration-500" 
+                          style={{ 
+                            width: `${project._count?.tasks ? Math.round(((project.doneTasksCount || 0) / project._count.tasks) * 100) : 0}%`,
+                            borderRight: (project.doneTasksCount || 0) > 0 ? '2px solid black' : 'none'
+                          }}
+                        ></div>
+                      </div>
                     </div>
-                    <div className="text-xs font-black uppercase text-black bg-white border-2 border-black px-2 py-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                      BY: {project.owner?.name?.[0]?.toUpperCase() || 'U'}
+
+                    <div className="flex justify-between items-end">
+                      <div className="bg-[#00E5FF] text-black font-black text-sm px-3 py-1.5 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                        TASKS: {project._count?.tasks || 0}
+                      </div>
+                      <div className="text-xs font-black uppercase text-black bg-white border-2 border-black px-2 py-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                        BY: {project.owner?.name?.[0]?.toUpperCase() || 'U'}
+                      </div>
                     </div>
                   </div>
                 </div>
