@@ -17,6 +17,7 @@ export interface Project {
   ownerId: string;
   createdAt: string;
   _count?: { tasks: number };
+  owner?: { id: string; name: string; email: string };
 }
 
 export interface Task {

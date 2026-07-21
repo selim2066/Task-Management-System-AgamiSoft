@@ -10,7 +10,7 @@ export function getErrorMessage(error: unknown): string {
     
     if (data?.details && Array.isArray(data.details)) {
       // Handle Zod error array
-      const messages = data.details.map((err: any) => {
+      const messages = data.details.map((err: { path?: (string | number)[]; message: string }) => {
         if (err.path && err.path.length > 0) {
           return `${err.path.join('.')}: ${err.message}`;
         }

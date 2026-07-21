@@ -59,10 +59,13 @@ export default function ProjectPage() {
       setLoading(true);
       const projRes = await api.get<Project>(`/projects/${id}`);
       setProject(projRes.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       showToast(getErrorMessage(err), 'error');
-      if (err.response?.status === 403 || err.response?.status === 404) {
-        router.push('/dashboard');
+      if (typeof err === 'object' && err !== null && 'response' in err) {
+        const status = (err as { response?: { status?: number } }).response?.status;
+        if (status === 403 || status === 404) {
+          router.push('/dashboard');
+        }
       }
     } finally {
       setLoading(false);
@@ -309,7 +312,7 @@ export default function ProjectPage() {
                             <div className="relative inline-block">
                               <select
                                 value={task.status}
-                                onChange={(e) => handleStatusChange(task.id, e.target.value as any)}
+                                onChange={(e) => handleStatusChange(task.id, e.target.value as Task['status'])}
                                 className={`text-sm font-black uppercase px-4 py-2 border-2 border-black appearance-none cursor-pointer focus:outline-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all pr-8 ${statusColors[task.status]}`}
                               >
                                 <option value="TODO">TODO</option>
@@ -394,7 +397,7 @@ export default function ProjectPage() {
                     <div className="relative">
                       <select
                         value={status}
-                        onChange={(e) => setStatus(e.target.value as any)}
+                        onChange={(e) => setStatus(e.target.value as Task['status'])}
                         className="w-full px-4 py-3 bg-white text-black text-lg font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all appearance-none"
                       >
                         <option value="TODO">TODO</option>

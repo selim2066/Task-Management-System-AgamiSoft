@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getErrorMessage } from '../../lib/errorHandler';
-import { Loader2, Mail, Lock, LayoutDashboard, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Loader2, LayoutDashboard, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -23,10 +23,10 @@ export default function LoginPage() {
     const errors: {email?: string, password?: string} = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email)) {
-      errors.email = 'Please enter a valid email address.';
+      errors.email = 'PLEASE ENTER A VALID EMAIL.';
     }
     if (!password) {
-      errors.password = 'Password is required.';
+      errors.password = 'PASSWORD IS REQUIRED.';
     }
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -39,9 +39,9 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await login(email, password);
-      showToast('Logged in successfully.', 'success');
+      showToast('LOGGED IN SUCCESSFULLY.', 'success');
       router.push('/dashboard');
-    } catch (err: any) {
+    } catch (err: unknown) {
       showToast(getErrorMessage(err), 'error');
     } finally {
       setIsSubmitting(false);
@@ -49,146 +49,141 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-white font-sans">
+    <div 
+      className="min-h-screen w-full flex font-sans text-black selection:bg-[#00E5FF] selection:text-black"
+      style={{
+        backgroundColor: '#FFFDF9',
+        backgroundImage: 'radial-gradient(#D1D5DB 1.5px, transparent 1.5px)',
+        backgroundSize: '24px 24px'
+      }}
+    >
       {/* Left Panel - Brand/Hero (Hidden on mobile) */}
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-blue-700 via-indigo-800 to-purple-900 text-white flex-col justify-between p-12 relative overflow-hidden">
-        {/* Decorative background shapes */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-30 pointer-events-none">
-          <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-blue-500 mix-blend-multiply filter blur-3xl animate-pulse" style={{ animationDuration: '8s' }}></div>
-          <div className="absolute top-[60%] -right-[10%] w-[60%] h-[60%] rounded-full bg-purple-500 mix-blend-multiply filter blur-3xl animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }}></div>
-        </div>
-
-        <div className="relative z-10 flex items-center space-x-3">
-          <div className="bg-white/10 p-2.5 rounded-xl backdrop-blur-md border border-white/20 shadow-xl">
-            <LayoutDashboard className="h-8 w-8 text-white" />
+      <div className="hidden lg:flex w-1/2 bg-[#00E5FF] border-r-4 border-black flex-col justify-between p-12 relative overflow-hidden">
+        <Link href="/" className="relative z-10 flex items-center space-x-2 group w-max">
+          <div className="bg-[#FFC900] border-2 border-black p-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:translate-x-[2px] group-hover:translate-y-[2px] group-hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all">
+            <LayoutDashboard className="h-6 w-6 text-black stroke-[3]" />
           </div>
-          <span className="text-2xl font-bold tracking-tight">TMS</span>
-        </div>
+          <span className="text-2xl font-black tracking-widest text-black uppercase bg-white border-2 border-black px-2 py-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">TMS_</span>
+        </Link>
         
-        <div className="relative z-10 max-w-lg">
-          <div className="inline-block px-4 py-1.5 rounded-full bg-blue-500/20 border border-blue-400/30 backdrop-blur-sm text-blue-200 text-sm font-semibold mb-6">
-            New Version 2.0
+        <div className="relative z-10 max-w-lg mt-12 bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+          <div className="inline-block px-3 py-1 bg-[#FF90E8] border-2 border-black text-black text-xs font-black mb-6 uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            VERSION 2.0 LIVE
           </div>
-          <h1 className="text-5xl font-extrabold tracking-tight leading-[1.1] mb-6 text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-200">
-            Manage your tasks with clarity and focus.
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight leading-none mb-6 uppercase text-black">
+            MANAGE TASKS WITH <span className="bg-[#FFEA00] px-2 inline-block border-2 border-black mt-2">CLARITY.</span>
           </h1>
-          <p className="text-lg text-blue-100/80 mb-10 leading-relaxed font-medium">
-            Join thousands of professionals who use TMS to organize their work, collaborate seamlessly, and achieve their goals faster.
+          <p className="text-lg font-bold text-gray-800 mb-8 leading-relaxed uppercase">
+            Join thousands of professionals who use TMS to organize their work and achieve goals faster.
           </p>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 bg-[#F5F5F5] border-2 border-black p-3 w-max">
             <div className="flex -space-x-3">
               {[1,2,3,4].map(i => (
-                <div key={i} className="w-10 h-10 rounded-full border-2 border-indigo-800 bg-gradient-to-br from-blue-100 to-indigo-200 shadow-sm flex items-center justify-center text-xs font-bold text-indigo-800">
+                <div key={i} className="w-10 h-10 rounded-full border-2 border-black bg-[#FFC900] flex items-center justify-center text-xs font-black text-black">
                   U{i}
                 </div>
               ))}
             </div>
-            <span className="text-sm font-semibold text-blue-200">Trusted by 10k+ professionals</span>
+            <span className="text-xs font-black text-black uppercase">TRUSTED BY 10K+ PROS</span>
           </div>
         </div>
         
-        <div className="relative z-10 text-sm font-medium text-blue-300/60">
-          &copy; {new Date().getFullYear()} Agami Soft Task Management. All rights reserved.
+        <div className="relative z-10 text-xs font-black text-black uppercase mt-12 bg-white border-2 border-black px-3 py-2 w-max shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          &copy; {new Date().getFullYear()} AGAMI SOFT TMS
         </div>
       </div>
 
       {/* Right Panel - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 lg:p-24 relative overflow-y-auto">
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-6 sm:p-12 lg:p-24 relative overflow-y-auto">
         {/* Mobile Logo */}
-        <div className="absolute top-8 left-8 lg:hidden flex items-center space-x-2">
-          <div className="bg-blue-600 p-2 rounded-xl shadow-md">
-            <LayoutDashboard className="h-6 w-6 text-white" />
+        <Link href="/" className="absolute top-6 left-6 lg:hidden flex items-center space-x-2 group">
+          <div className="bg-[#FFC900] border-2 border-black p-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <LayoutDashboard className="h-5 w-5 text-black stroke-[3]" />
           </div>
-          <span className="text-xl font-bold text-gray-900 tracking-tight">TMS</span>
-        </div>
+          <span className="text-xl font-black tracking-widest text-black uppercase bg-white border-2 border-black px-1.5 py-0.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">TMS_</span>
+        </Link>
 
-        <div className="w-full max-w-md mx-auto">
-          <div className="mb-10 text-center lg:text-left mt-12 lg:mt-0">
-            <h2 className="text-3xl font-extrabold text-gray-900 mb-2 tracking-tight">Welcome back</h2>
-            <p className="text-gray-500 font-medium">Please enter your details to sign in.</p>
+        <div className="w-full max-w-md mx-auto bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] mt-12 lg:mt-0">
+          <div className="mb-8 text-left">
+            <h2 className="text-3xl font-black text-black mb-2 uppercase">WELCOME BACK</h2>
+            <p className="text-black font-bold uppercase text-sm bg-[#FFEA00] inline-block px-2 border-2 border-black">SIGN IN TO CONTINUE</p>
           </div>
 
-          <form onSubmit={handleSubmit} noValidate className="space-y-5">
-            <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-gray-700 block">Email address</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none transition-colors">
-                  <Mail className={`h-5 w-5 ${validationErrors.email ? 'text-red-400' : 'text-gray-400 group-focus-within:text-blue-500'}`} />
+          <form onSubmit={handleSubmit} noValidate className="space-y-6">
+            <div>
+              <label className="block text-sm font-black text-black mb-2 uppercase">
+                <span className="bg-white px-1 border border-black">EMAIL ADDRESS</span>
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setValidationErrors({ ...validationErrors, email: '' }); }}
+                className={`w-full px-4 py-3 bg-white text-black text-base font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all
+                  ${validationErrors.email ? 'bg-red-50 border-red-500' : ''}
+                `}
+                placeholder="YOU@EXAMPLE.COM"
+              />
+              {validationErrors.email && (
+                <div className="mt-2 bg-red-100 border-2 border-red-500 px-2 py-1 text-red-700 text-xs font-black uppercase inline-block">
+                  {validationErrors.email}
                 </div>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => { setEmail(e.target.value); setValidationErrors({ ...validationErrors, email: '' }); }}
-                  className={`block w-full pl-11 pr-4 py-3 sm:text-sm border rounded-xl transition-all duration-200 outline-none
-                    ${validationErrors.email 
-                      ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-4 focus:ring-red-500/20 focus:border-red-500 bg-red-50/30' 
-                      : 'border-gray-200 text-gray-900 placeholder-gray-400 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 bg-gray-50 hover:bg-white focus:bg-white'}
-                  `}
-                  placeholder="you@example.com"
-                />
-              </div>
-              {validationErrors.email && <p className="text-red-500 text-sm mt-1.5 font-medium">{validationErrors.email}</p>}
+              )}
             </div>
 
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-gray-700 block">Password</label>
-                <a href="#" className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">Forgot password?</a>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-black text-black uppercase">
+                  <span className="bg-white px-1 border border-black">PASSWORD</span>
+                </label>
               </div>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none transition-colors">
-                  <Lock className={`h-5 w-5 ${validationErrors.password ? 'text-red-400' : 'text-gray-400 group-focus-within:text-blue-500'}`} />
-                </div>
+              <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setValidationErrors({ ...validationErrors, password: '' }); }}
-                  className={`block w-full pl-11 pr-11 py-3 sm:text-sm border rounded-xl transition-all duration-200 outline-none
-                    ${validationErrors.password 
-                      ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-4 focus:ring-red-500/20 focus:border-red-500 bg-red-50/30' 
-                      : 'border-gray-200 text-gray-900 placeholder-gray-400 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 bg-gray-50 hover:bg-white focus:bg-white'}
+                  className={`w-full pl-4 pr-12 py-3 bg-white text-black text-base font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all
+                    ${validationErrors.password ? 'bg-red-50 border-red-500' : ''}
                   `}
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                  className="absolute inset-y-0 right-0 px-3 flex items-center text-black hover:bg-[#F5F5F5] border-l-2 border-black transition-colors focus:outline-none"
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? <EyeOff className="h-5 w-5 stroke-[3]" /> : <Eye className="h-5 w-5 stroke-[3]" />}
                 </button>
               </div>
-              {validationErrors.password && <p className="text-red-500 text-sm mt-1.5 font-medium">{validationErrors.password}</p>}
+              {validationErrors.password && (
+                <div className="mt-2 bg-red-100 border-2 border-red-500 px-2 py-1 text-red-700 text-xs font-black uppercase inline-block">
+                  {validationErrors.password}
+                </div>
+              )}
             </div>
 
             <button
               type="submit"
-              disabled={isSubmitting || Object.keys(validationErrors).some(k => (validationErrors as any)[k])}
-              className="group w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-xl shadow-md shadow-blue-500/20 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/30 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98] mt-2"
+              disabled={isSubmitting || Object.values(validationErrors).some(Boolean)}
+              className="w-full flex items-center justify-center py-4 px-4 border-4 border-black text-lg font-black text-black uppercase bg-[#7C4DFF] shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:bg-[#B388FF] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50 disabled:cursor-not-allowed transition-all mt-6 group"
             >
               {isSubmitting ? (
-                <Loader2 className="animate-spin h-5 w-5" />
+                <Loader2 className="animate-spin h-6 w-6 stroke-[3]" />
               ) : (
                 <>
-                  Sign in
-                  <ArrowRight className="ml-2 h-4 w-4 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                  <span className="text-white">SIGN IN</span>
+                  <ArrowRight className="ml-2 h-6 w-6 text-white stroke-[3] group-hover:translate-x-1 transition-transform" />
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500 font-semibold">Or try a demo account</span>
-              </div>
+          <div className="mt-8 pt-8 border-t-4 border-black">
+            <div className="text-xs font-black text-black uppercase mb-4 text-center">
+              <span className="bg-[#00E5FF] px-2 py-1 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">OR TRY A DEMO ACCOUNT</span>
             </div>
             
-            <div className="mt-6 grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <button
                 type="button"
                 onClick={() => {
@@ -196,9 +191,9 @@ export default function LoginPage() {
                   setPassword('Admin123!');
                   setValidationErrors({});
                 }}
-                className="w-full flex justify-center py-2.5 px-4 border border-gray-200 rounded-xl shadow-sm bg-white text-sm font-bold text-gray-700 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-4 focus:ring-gray-100 transition-all duration-200 active:scale-[0.98]"
+                className="w-full flex justify-center py-3 px-2 border-2 border-black bg-[#FFEA00] text-sm font-black text-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
               >
-                Demo Admin
+                DEMO ADMIN
               </button>
               <button
                 type="button"
@@ -207,17 +202,19 @@ export default function LoginPage() {
                   setPassword('User123!');
                   setValidationErrors({});
                 }}
-                className="w-full flex justify-center py-2.5 px-4 border border-gray-200 rounded-xl shadow-sm bg-white text-sm font-bold text-gray-700 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-4 focus:ring-gray-100 transition-all duration-200 active:scale-[0.98]"
+                className="w-full flex justify-center py-3 px-2 border-2 border-black bg-[#FF90E8] text-sm font-black text-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
               >
-                Demo User
+                DEMO USER
               </button>
             </div>
           </div>
-
-          <p className="mt-10 text-center text-sm text-gray-600 font-medium">
-            Don't have an account?{' '}
-            <Link href="/register" className="font-bold text-blue-600 hover:text-blue-700 transition-colors">
-              Create an account
+        </div>
+        
+        <div className="mt-8 text-center bg-white border-2 border-black px-4 py-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <p className="text-sm text-black font-black uppercase">
+            DON'T HAVE AN ACCOUNT?{' '}
+            <Link href="/register" className="text-[#7C4DFF] hover:text-black underline underline-offset-4 decoration-2 transition-colors">
+              CREATE ONE
             </Link>
           </p>
         </div>
