@@ -24,8 +24,10 @@ export const projectController = {
 
   async getAll(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const projects = await projectService.getProjects(req.user!);
-      res.status(200).json(projects);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const result = await projectService.getProjects(req.user!, page, limit);
+      res.status(200).json(result);
     } catch (error) {
       next(error);
     }
@@ -33,8 +35,10 @@ export const projectController = {
 
   async getAllAdmin(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const projects = await projectService.getAllProjectsAdmin();
-      res.status(200).json(projects);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const result = await projectService.getAllProjectsAdmin(page, limit);
+      res.status(200).json(result);
     } catch (error) {
       next(error);
     }

@@ -18,22 +18,45 @@ export default function ProjectPage() {
   const id = params.id as string;
   const { user } = useAuth();
   const { showToast } = useToast();
-  
+
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(9);
+
   // Filter state
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('');
-  
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterStatus]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) { // lg
+        setLimit(9);
+      } else if (window.innerWidth >= 768) { // md/tablet
+        setLimit(6);
+      } else { // mobile
+        setLimit(4);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<'TODO' | 'IN_PROGRESS' | 'DONE'>('TODO');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<{title?: string}>({});
+  const [validationErrors, setValidationErrors] = useState<{ title?: string }>({});
 
   // Delete modal state
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
@@ -45,14 +68,14 @@ export default function ProjectPage() {
     }
   }, [id, user]);
 
-  // Debounced task fetch based on filters
+  // Debounced task fetch based on filters and pagination
   useEffect(() => {
     if (!id || !user) return;
     const timeoutId = setTimeout(() => {
       fetchTasks(search, filterStatus);
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [search, filterStatus, id, user]);
+  }, [search, filterStatus, id, user, currentPage, limit]);
 
   const fetchProject = async () => {
     try {
@@ -74,11 +97,17 @@ export default function ProjectPage() {
 
   const fetchTasks = async (currentSearch: string, currentStatus: string) => {
     try {
-      let url = `/tasks?projectId=${id}`;
+      let url = `/tasks?projectId=${id}&page=${currentPage}&limit=${limit}`;
       if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
       if (currentStatus) url += `&status=${currentStatus}`;
-      const tasksRes = await api.get<Task[]>(url);
-      setTasks(tasksRes.data);
+      const tasksRes = await api.get(url);
+      if (Array.isArray(tasksRes.data)) {
+        setTasks(tasksRes.data);
+        setTotalPages(1);
+      } else {
+        setTasks(tasksRes.data?.data || []);
+        setTotalPages(tasksRes.data?.pagination?.totalPages || 1);
+      }
     } catch (err) {
       showToast(getErrorMessage(err), 'error');
     }
@@ -114,7 +143,7 @@ export default function ProjectPage() {
   };
 
   const validate = () => {
-    const errors: {title?: string} = {};
+    const errors: { title?: string } = {};
     if (!title.trim() || title.trim().length < 2) {
       errors.title = 'TASK TITLE MUST BE AT LEAST 2 CHARACTERS.';
     }
@@ -125,7 +154,7 @@ export default function ProjectPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    
+
     setIsSubmitting(true);
     try {
       await api.post('/tasks', { title, description, status, projectId: id });
@@ -182,7 +211,7 @@ export default function ProjectPage() {
               <div className="bg-white border-4 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden">
                 {/* Decorative tape */}
                 <div className="absolute -top-4 -right-4 w-16 h-8 bg-[#FF90E8]/50 rotate-[45deg]"></div>
-                
+
                 <h1 className="text-4xl font-black text-black mb-3 uppercase tracking-wide">
                   <span className="bg-[#FFC900] px-2 border-2 border-black">{project.name}</span>
                 </h1>
@@ -241,7 +270,7 @@ export default function ProjectPage() {
                       <option value="DONE">DONE</option>
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-black">
-                      <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                      <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
                     </div>
                   </div>
                   {isFiltering && (
@@ -301,7 +330,7 @@ export default function ProjectPage() {
                     </thead>
                     <tbody className="bg-white divide-y-2 divide-black">
                       {tasks.map((task) => (
-                         <tr key={task.id} className="hover:bg-gray-100 transition-colors group">
+                        <tr key={task.id} className="hover:bg-gray-100 transition-colors group">
                           <td className="px-6 py-5 border-r-4 border-black">
                             <div className="text-lg font-black text-black uppercase leading-tight">{task.title}</div>
                             {task.description && (
@@ -320,7 +349,7 @@ export default function ProjectPage() {
                                 <option value="DONE">DONE</option>
                               </select>
                               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-black">
-                                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
                               </div>
                             </div>
                           </td>
@@ -350,6 +379,29 @@ export default function ProjectPage() {
                 </div>
               )}
             </div>
+            
+            {/* Pagination UI for Tasks */}
+            {!loading && totalPages > 1 && (
+              <div className="flex justify-between items-center bg-white border-4 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-6 py-2 bg-[#FFC900] border-2 border-black font-black uppercase text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none"
+                >
+                  PREVIOUS
+                </button>
+                <span className="font-black uppercase tracking-widest text-lg">
+                  PAGE {currentPage} OF {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-6 py-2 bg-[#00E5FF] border-2 border-black font-black uppercase text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none"
+                >
+                  NEXT
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -405,7 +457,7 @@ export default function ProjectPage() {
                         <option value="DONE">DONE</option>
                       </select>
                       <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-black">
-                        <svg className="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                        <svg className="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
                       </div>
                     </div>
                   </div>

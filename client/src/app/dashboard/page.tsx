@@ -17,30 +17,54 @@ export default function DashboardPage() {
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(9);
+
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<{name?: string}>({});
+  const [validationErrors, setValidationErrors] = useState<{ name?: string }>({});
 
   // Delete modal state
   const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) { // lg
+        setLimit(9);
+      } else if (window.innerWidth >= 768) { // md/tablet
+        setLimit(6);
+      } else { // mobile
+        setLimit(4);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
     fetchProjects();
-  }, [user]);
+  }, [user, page, limit]);
 
   const fetchProjects = async () => {
     if (!user) return;
     try {
       setLoading(true);
-      const url = user.role === 'ADMIN' ? '/projects/admin/all' : '/projects';
-      const res = await api.get<Project[]>(url);
-      setProjects(res.data);
+      const url = user.role === 'ADMIN' ? `/projects/admin/all?page=${page}&limit=${limit}` : `/projects?page=${page}&limit=${limit}`;
+      const res = await api.get(url);
+      if (Array.isArray(res.data)) {
+        setProjects(res.data);
+        setTotalPages(1);
+      } else {
+        setProjects(res.data?.data || []);
+        setTotalPages(res.data?.pagination?.totalPages || 1);
+      }
     } catch (err) {
       showToast(getErrorMessage(err), 'error');
     } finally {
@@ -71,7 +95,7 @@ export default function DashboardPage() {
   };
 
   const validate = () => {
-    const errors: {name?: string} = {};
+    const errors: { name?: string } = {};
     if (!name.trim() || name.trim().length < 2) {
       errors.name = 'PROJECT NAME MUST BE AT LEAST 2 CHARACTERS.';
     }
@@ -82,7 +106,7 @@ export default function DashboardPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    
+
     setIsSubmitting(true);
     try {
       if (editingId) {
@@ -151,7 +175,7 @@ export default function DashboardPage() {
             {/* Decorative tape */}
             <div className="absolute -top-4 -left-4 w-16 h-8 bg-[#FFC900]/50 rotate-[-45deg]"></div>
             <div className="absolute top-4 right-4 w-16 h-8 bg-[#00E5FF]/50 rotate-[30deg]"></div>
-            
+
             <div className="flex justify-center mb-6">
               <div className="bg-[#FF90E8] border-2 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                 <FolderKanban className="h-16 w-16 text-black stroke-[2]" />
@@ -170,8 +194,8 @@ export default function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {projects.map((project) => (
-              <div 
-                key={project.id} 
+              <div
+                key={project.id}
                 onClick={() => router.push(`/dashboard/projects/${project.id}`)}
                 className="bg-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all duration-200 p-0 flex flex-col cursor-pointer group"
               >
@@ -184,7 +208,7 @@ export default function DashboardPage() {
                     </h3>
                   </div>
                 </div>
-                
+
                 <div className="p-4 flex flex-col flex-grow relative">
                   <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white border-2 border-black p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                     <button
@@ -212,7 +236,7 @@ export default function DashboardPage() {
                   <p className="text-sm font-bold mt-2 mb-6 line-clamp-3 leading-relaxed">
                     {project.description || <span className="italic opacity-50 bg-gray-200 px-1 font-black uppercase">NO DESCRIPTION</span>}
                   </p>
-                  
+
                   <div className="mt-auto flex justify-between items-end pt-2">
                     <div className="bg-[#00E5FF] text-black font-black text-sm px-3 py-1.5 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                       TASKS: {project._count?.tasks || 0}
@@ -224,6 +248,29 @@ export default function DashboardPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Pagination UI */}
+        {!loading && totalPages > 1 && (
+          <div className="flex justify-between items-center mt-8 bg-white border-4 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-6 py-2 bg-[#FFC900] border-2 border-black font-black uppercase text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none"
+            >
+              PREVIOUS
+            </button>
+            <span className="font-black uppercase tracking-widest text-lg">
+              PAGE {page} OF {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="px-6 py-2 bg-[#00E5FF] border-2 border-black font-black uppercase text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none"
+            >
+              NEXT
+            </button>
           </div>
         )}
 

@@ -20,9 +20,14 @@ export const projectService = {
     return project;
   },
 
-  async getProjects(user: UserContext) {
+  async getProjects(user: UserContext, page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+
     if (user.role === ROLES.ADMIN) {
-      return await prisma.project.findMany({
+      const totalItems = await prisma.project.count();
+      const data = await prisma.project.findMany({
+        skip,
+        take: limit,
         include: {
           owner: {
             select: { id: true, name: true, email: true },
@@ -32,16 +37,22 @@ export const projectService = {
           },
         },
       });
+      return { data, pagination: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
     }
 
-    return await prisma.project.findMany({
-      where: { ownerId: user.id },
+    const where = { ownerId: user.id };
+    const totalItems = await prisma.project.count({ where });
+    const data = await prisma.project.findMany({
+      where,
+      skip,
+      take: limit,
       include: {
         _count: {
           select: { tasks: true },
         },
       },
     });
+    return { data, pagination: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
   },
 
   async getProjectById(id: string, user: UserContext) {
@@ -89,8 +100,12 @@ export const projectService = {
     });
   },
 
-  async getAllProjectsAdmin() {
-    return await prisma.project.findMany({
+  async getAllProjectsAdmin(page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+    const totalItems = await prisma.project.count();
+    const data = await prisma.project.findMany({
+      skip,
+      take: limit,
       include: {
         owner: {
           select: { id: true, name: true, email: true },
@@ -100,5 +115,6 @@ export const projectService = {
         },
       },
     });
+    return { data, pagination: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
   },
 };

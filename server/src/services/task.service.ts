@@ -13,6 +13,8 @@ interface TaskFilters {
   projectId?: string;
   status?: TaskStatus;
   search?: string;
+  page?: number;
+  limit?: number;
 }
 
 export const taskService = {
@@ -38,6 +40,9 @@ export const taskService = {
 
   async getTasks(user: UserContext, filters: TaskFilters) {
     const where: any = {};
+    const page = filters.page || 1;
+    const limit = filters.limit || 10;
+    const skip = (page - 1) * limit;
 
     if (filters.projectId) {
       where.projectId = filters.projectId;
@@ -58,13 +63,18 @@ export const taskService = {
       ];
     }
 
-    return await prisma.task.findMany({
+    const totalItems = await prisma.task.count({ where });
+    const data = await prisma.task.findMany({
       where,
+      skip,
+      take: limit,
       include: {
         assignedTo: { select: { id: true, name: true, email: true } },
         project: { select: { id: true, name: true } }
       }
     });
+    
+    return { data, pagination: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
   },
 
   async getTaskById(id: string, user: UserContext) {
@@ -106,12 +116,18 @@ export const taskService = {
     });
   },
 
-  async getAllTasksAdmin() {
-    return await prisma.task.findMany({
+  async getAllTasksAdmin(page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+    const totalItems = await prisma.task.count();
+    const data = await prisma.task.findMany({
+      skip,
+      take: limit,
       include: {
         assignedTo: { select: { id: true, name: true, email: true } },
         project: { select: { id: true, name: true } }
       }
     });
+    
+    return { data, pagination: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
   },
 };

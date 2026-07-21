@@ -28,8 +28,10 @@ export const taskController = {
         projectId: req.query.projectId as string | undefined,
         status: req.query.status as TaskStatus | undefined,
         search: req.query.search as string | undefined,
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 10,
       };
-      
+
       const tasks = await taskService.getTasks(req.user!, filters);
       res.status(200).json(tasks);
     } catch (error) {
@@ -39,7 +41,9 @@ export const taskController = {
 
   async getAllAdmin(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const tasks = await taskService.getAllTasksAdmin();
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const tasks = await taskService.getAllTasksAdmin(page, limit);
       res.status(200).json(tasks);
     } catch (error) {
       next(error);

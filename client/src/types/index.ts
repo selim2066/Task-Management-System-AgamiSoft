@@ -30,3 +30,13 @@ export interface Task {
   createdAt: string;
   assignedTo?: { id: string; name: string; email: string };
 }
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalItems: number;
+    totalPages: number;
+  };
+}
